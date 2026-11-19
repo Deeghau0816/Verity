@@ -1,0 +1,6 @@
+pandas
+pyarrow
+websockets
+python-dotenv
+yfinance
+pytest
