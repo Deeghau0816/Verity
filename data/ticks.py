@@ -1,4 +1,5 @@
 """A trade tick, plus a simple store that saves ticks to Parquet files."""
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,27 @@ class Tick:
     price: float
     volume: float
     recv_ms: int = 0  # when WE received it; later used to measure feed delay
+
+
+def parse_trade_message(msg, recv_ms=None):
+    """Turn one Finnhub WebSocket message into a list of Ticks.
+
+    Non-trade messages (ping, errors) return an empty list.
+    """
+    if msg.get("type") != "trade":
+        return []
+    if recv_ms is None:
+        recv_ms = int(time.time() * 1000)
+    return [
+        Tick(
+            symbol=item["s"],
+            ts_ms=int(item["t"]),
+            price=float(item["p"]),
+            volume=float(item["v"]),
+            recv_ms=recv_ms,
+        )
+        for item in msg.get("data", [])
+    ]
 
 
 class TickStore:
